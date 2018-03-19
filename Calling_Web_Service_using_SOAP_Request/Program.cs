@@ -19,16 +19,41 @@ namespace Calling_Web_Service_using_SOAP_Request
             Program obj = new Program();
             Console.WriteLine("Please Enter Input values..");
             //Reading input values from console
-            Console.Write("Enter Year :");
-            int year = Convert.ToInt32(Console.ReadLine());
-            Console.Write("Enter Month :");
-            int month = Convert.ToInt32(Console.ReadLine());
-            Console.Write("Enter Harmonize Code :");
+            
+            //  Year
+            Console.Write("Enter from year : ");
+            int fromYear = Convert.ToInt32(Console.ReadLine());
+            Console.Write("      to year : ");
+            int toYear = Convert.ToInt32(Console.ReadLine());
+            
+            //  Month
+            Console.Write("Enter from month : ");
+            int fromMonth = Convert.ToInt32(Console.ReadLine());
+            Console.Write("      to month : ");
+            int toMonth = Convert.ToInt32(Console.ReadLine());
+            
+            //  harmonize code
+            Console.Write("Enter Harmonize Code : ");
             string harmonizeCode = Convert.ToString(Console.ReadLine());
-            Console.Write("Enter Rank :");
-            int rank = Convert.ToInt32(Console.ReadLine());
-            //Calling InvokeService method    
-            obj.InvokeServiceExportHarmonizeCountry( year, month, rank, harmonizeCode );
+
+            //  rank
+            Console.Write("Enter from rank : ");
+            int fromRank = Convert.ToInt32(Console.ReadLine());
+            Console.Write("      to rank : ");
+            int toRank = Convert.ToInt32(Console.ReadLine());
+
+            //  loop over all year/month/rank and call the service
+            for( int year = fromYear ; year <= toYear ; ++ year )
+            {
+                for( int month = fromMonth ; month <= toMonth ; ++ month )
+                {
+                    for( int rank = fromRank ; rank <= toRank ; ++ rank )
+                    {
+                        //  Calling InvokeService method    
+                        obj.InvokeServiceExportHarmonizeCountry( year, month, rank, harmonizeCode );
+                    }
+                }
+            }
         }
 
         public HttpWebRequest CreateSOAPWebRequestForExportHarmonizeCountry()
@@ -49,7 +74,7 @@ namespace Calling_Web_Service_using_SOAP_Request
 
         public void InvokeServiceExportHarmonizeCountry( int year, int month, int rank, string harmonizeCode )
         {
-            Console.Write( String.Format("Getting the export harmonize country : ( year = {0}, month = {1}, rank = {2}, harmonize code ={3}", year.ToString(), month.ToString(), rank.ToString(), harmonizeCode ) );
+            Console.WriteLine( String.Format("Getting the export harmonize country : ( year = {0}, month = {1}, rank = {2}, harmonize code ={3}", year.ToString(), month.ToString(), rank.ToString(), harmonizeCode ) );
             //Calling CreateSOAPWebRequest method    
             HttpWebRequest request = CreateSOAPWebRequestForExportHarmonizeCountry();
 
@@ -98,7 +123,8 @@ namespace Calling_Web_Service_using_SOAP_Request
                     var ServiceResult = rd.ReadToEnd();
                     //writting stream result on console    
                     Console.WriteLine(ServiceResult);
-                    Console.ReadLine();
+                    Console.WriteLine( "------------------------------------------------\n" );
+                    //Console.ReadLine();
                 }
             }
         }
