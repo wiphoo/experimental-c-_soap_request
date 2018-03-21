@@ -34,31 +34,39 @@ namespace Calling_Web_Service_using_SOAP_Request
             int fromMonth = Convert.ToInt32(Console.ReadLine());
             Console.Write("      to month : ");
             int toMonth = Convert.ToInt32(Console.ReadLine());
-            
+
+#warning UNCOMMENT_ME
+            ////  harmonize code
+            //Console.Write("Enter harmonize code (csv file name) : ");
+            //string harmonizeCodeCsvFileName = Convert.ToString(Console.ReadLine());
+            //List<string> harmonizeCodeList = new List<string>();
+            ////  parsing csv file to a list of harmonize code
+            //{
+            //    //  read a csv harmonize file
+            //    string[] harmonizeLines = System.IO.File.ReadAllLines( harmonizeCodeCsvFileName );
+
+            //    //  strip the harmonize code that is a first element in the csv file
+            //    foreach( string harmonizeLine in harmonizeLines )
+            //    {
+            //        //  strip the comma ','
+            //        List<string> harmonizeLineSplit = harmonizeLine.Split( ',' ).ToList();
+            //        Debug.Assert( harmonizeLineSplit.Count >= 1 );
+
+            //        //  get the harmonize code
+            //        string harmonizeCode = harmonizeLineSplit.ElementAt( 0 ).ToString();
+            //        Debug.Assert( !string.IsNullOrEmpty( harmonizeCode ) );
+
+            //        //  get the first element
+            //        harmonizeCodeList.Add( harmonizeCode );
+            //    }
+            //}
+
+#warning REMOVE_ME :: TESTING PURPOSE
             //  harmonize code
-            Console.Write("Enter harmonize code (csv file name) : ");
-            string harmonizeCodeCsvFileName = Convert.ToString(Console.ReadLine());
+            Console.Write("Enter harmonize code : ");
+            string harmonizeCodeStr = Convert.ToString(Console.ReadLine());
             List<string> harmonizeCodeList = new List<string>();
-            //  parsing csv file to a list of harmonize code
-            {
-                //  read a csv harmonize file
-                string[] harmonizeLines = System.IO.File.ReadAllLines( harmonizeCodeCsvFileName );
-                
-                //  strip the harmonize code that is a first element in the csv file
-                foreach( string harmonizeLine in harmonizeLines )
-                {
-                    //  strip the comma ','
-                    List<string> harmonizeLineSplit = harmonizeLine.Split( ',' ).ToList();
-                    Debug.Assert( harmonizeLineSplit.Count >= 1 );
-
-                    //  get the harmonize code
-                    string harmonizeCode = harmonizeLineSplit.ElementAt( 0 ).ToString();
-                    Debug.Assert( !string.IsNullOrEmpty( harmonizeCode ) );
-
-                    //  get the first element
-                    harmonizeCodeList.Add( harmonizeCode );
-                }
-            }
+            harmonizeCodeList.Add( harmonizeCodeStr );
 
             //  rank
             Console.Write("Enter from rank : ");
@@ -81,14 +89,16 @@ namespace Calling_Web_Service_using_SOAP_Request
                     }
                 }
             }
+
+            Console.ReadLine();
         }
 
         public HttpWebRequest CreateSOAPWebRequestForExportHarmonizeCountry()
         {
             //  making Web Request    
-            HttpWebRequest httpWebRequest = ( HttpWebRequest )WebRequest.Create(@"http://www2.ops3.moc.go.th/tradeWebservice/ServiceExportHarmonizeCountry.asmx");
+            HttpWebRequest httpWebRequest = ( HttpWebRequest )WebRequest.Create( @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceImportHarmonizeCountry.asmx" );
             //SOAPAction    
-            httpWebRequest.Headers.Add(@"SOAPAction:http://tempuri.org/GetExportHarmonizeCountry");
+            httpWebRequest.Headers.Add( @"SOAPAction:http://tempuri.org/GetImportHarmonizeCountry" );
             //httpWebRequest.Host = "www2.ops3.moc.go.th";
             //Content_type    
             httpWebRequest.ContentType = "text/xml;charset=\"utf-8\"";
