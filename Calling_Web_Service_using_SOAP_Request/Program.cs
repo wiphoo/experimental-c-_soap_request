@@ -92,17 +92,51 @@ namespace Calling_Web_Service_using_SOAP_Request
             //                }
             //            }
 
-            invokeServiceImportHarmonizeCountry( 2017, 8, 99999, "390410" );
-            Console.WriteLine( "--------------------------------------------------" );
 
-            string urlGetExportHamonizeCountry = @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceExportHarmonizeCountry.asmx",
-                    actionGetExportHamonizeCountry = "http://tempuri.org/GetExportHarmonizeCountry";
+            //  export hamonize country
+            {
+                //  create the url and action
+                string urlGetExportHamonizeCountry = @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceExportHarmonizeCountry.asmx",
+                        actionGetExportHamonizeCountry = "http://tempuri.org/GetExportHarmonizeCountry";
 
-            HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
-            XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( 2017, 8, "390410", 10 );
-            callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
+                //  call a request
+                HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
+                XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( 2017, 8, "390410", 2 );
+                callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
 
+                Console.WriteLine( "--------------------------------------------------" );
+            }
+
+            //  import hamonize country
+            {
+                //  create the url and action
+                string urlGetImportHamonizeCountry = @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceImportHarmonizeCountry.asmx",
+                        actionGetImportHamonizeCountry = "http://tempuri.org/GetImportHarmonizeCountry";
+
+                //  call a request
+                HttpWebRequest requestGetImportHamonizeCountry = createSOAPWebRequest( urlGetImportHamonizeCountry, actionGetImportHamonizeCountry );
+                XmlDocument envelopeGetImportHamonizeCountry = createSOAPEnvelopeForGetImportHarmonizeCountry( 2017, 8, "271114", 100 );
+                callWebService( requestGetImportHamonizeCountry, envelopeGetImportHamonizeCountry );
+
+                Console.WriteLine( "--------------------------------------------------" );
+            }
+
+            //  wait for a key press to exit
             Console.ReadLine();
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------
+        //  Helper funtions
+
+        public static HttpWebRequest createSOAPWebRequest( string url, string action )
+        {
+            //  create the http web request header
+            HttpWebRequest webRequest = ( HttpWebRequest )WebRequest.Create( url );
+            webRequest.Headers.Add( @"SOAPAction", action );
+            webRequest.ContentType = @"application/soap+xml; charset=""utf-8""";
+            webRequest.Method = @"POST";
+
+            return webRequest;
         }
 
         public static void callWebService( HttpWebRequest request, XmlDocument envelope )
@@ -139,26 +173,15 @@ namespace Calling_Web_Service_using_SOAP_Request
 
         //-----------------------------------------------------------------------------------------------------------------
         //  GetExportHarmonizeCountry
-
-        public static HttpWebRequest createSOAPWebRequest( string url, string action )
-        {
-            //  create the http web request header
-            HttpWebRequest webRequest = ( HttpWebRequest )WebRequest.Create( url );
-            webRequest.Headers.Add( "SOAPAction", action );
-            webRequest.ContentType = "text/xml; charset=\"utf-8\"";
-            webRequest.Accept = "text/xml";
-            webRequest.Method = "POST";
-            return webRequest;
-        }
-       
+        
         public static XmlDocument createSOAPEnvelopeForGetExportHarmonizeCountry( int year, int month, string harmonizeCode, int numRanks )
         {
-            Console.WriteLine( String.Format( "createSOAPEnvelopeForGetExportHarmonizeCountry : ( year = {0}, month = {1}, rank = {2}, harmonize code = {3} )", year.ToString(), month.ToString(), harmonizeCode, numRanks.ToString()  ) );
+            Console.WriteLine( String.Format( "createSOAPEnvelopeForGetExportHarmonizeCountry : ( year = {0}, month = {1}, hamonize code = {2}, number of rnaks = {3} )", year.ToString(), month.ToString(), harmonizeCode, numRanks.ToString()  ) );
             //  create empty SOAP envelope document
             XmlDocument soapEnvelopeDocument = new XmlDocument();
 
             //  set the SOAP envelope
-            soapEnvelopeDocument.LoadXml( @"<?xml version=""1.0"" encoding=""utf-8"" ?>
+            soapEnvelopeDocument.LoadXml( @"<?xml version=""1.0"" encoding=""utf-8""?>
     <soap12:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap12=""http://www.w3.org/2003/05/soap-envelope"">
         <soap12:Body>
             <GetExportHarmonizeCountry xmlns=""http://tempuri.org/"">
@@ -177,77 +200,27 @@ namespace Calling_Web_Service_using_SOAP_Request
         //-----------------------------------------------------------------------------------------------------------------
         //  GetImportHarmonizeCountry
 
-        public static HttpWebRequest createSOAPWebRequestForImportHarmonizeCountry()
+        public static XmlDocument createSOAPEnvelopeForGetImportHarmonizeCountry( int year, int month, string harmonizeCode, int numRanks )
         {
-            //  making Web Request    
-            HttpWebRequest httpWebRequest = ( HttpWebRequest )WebRequest.Create( @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceImportHarmonizeCountry.asmx" );
-            //SOAPAction    
-            httpWebRequest.Headers.Add( @"SOAPAction:http://tempuri.org/GetImportHarmonizeCountry" );
-            httpWebRequest.Host = "www2.ops3.moc.go.th";
-            //Content_type    
-            httpWebRequest.ContentType = "text/xml;charset=\"utf-8\"";
-            httpWebRequest.Accept = "text/xml";
-            //HTTP method    
-            httpWebRequest.Method = "POST";
-            //return HttpWebRequest    
-            return httpWebRequest;
-        }
+            Console.WriteLine( String.Format( "createSOAPEnvelopeForGetImportHarmonizeCountry : ( year = {0}, month = {1}, harmonize code = {2}, number of rank = {3} )", year.ToString(), month.ToString(), harmonizeCode, numRanks.ToString() ) );
+            //  create empty SOAP envelope document
+            XmlDocument soapEnvelopeDocument = new XmlDocument();
 
-        public static void invokeServiceImportHarmonizeCountry( int year, int month, int rank, string harmonizeCode )
-        {
-            Console.WriteLine( String.Format("Getting the export harmonize country : ( year = {0}, month = {1}, rank = {2}, harmonize code = {3} )", year.ToString(), month.ToString(), rank.ToString(), harmonizeCode ) );
-            //Calling CreateSOAPWebRequest method
-            HttpWebRequest request = createSOAPWebRequestForImportHarmonizeCountry();
+            //  set the SOAP envelope
+            soapEnvelopeDocument.LoadXml( @"<?xml version=""1.0"" encoding=""utf-8""?>
+    <soap12:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap12=""http://www.w3.org/2003/05/soap-envelope"">
+        <soap12:Body>
+            <GetImportHarmonizeCountry xmlns=""http://tempuri.org/"">
+                <Yearno>" + year + @"</Yearno>
+                <Monthno>" + month + @"</Monthno>
+                <HarmonizeCode>" + harmonizeCode + @"</HarmonizeCode>
+                <NoRank>" + numRanks + @" </NoRank>
+            </GetImportHarmonizeCountry>
+        </soap12:Body>
+    </soap12:Envelope>" );
 
-            XmlDocument SOAPReqBody = new XmlDocument();
-            SOAPReqBody.LoadXml(@"<?xml version=""1.0"" encoding=""utf-8""?>
-   <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
-             
-               <soap:Body>
-              
-                  <GetExportHarmonizeCountry xmlns=""http://tempuri.org/"">
-               
-                     <Yearno>" + year.ToString() + @"</Yearno>
-               
-                     <Monthno>" + month.ToString() + @"</Monthno>
-               
-                     <HarmonizeCode>" + harmonizeCode + @"</HarmonizeCode>
-               
-                     <NoRank>" + rank.ToString() + @"</NoRank>
-               
-                   </GetExportHarmonizeCountry>
-               
-                 </soap:Body>
-                </soap:Envelope>" );
-
-            using (Stream stream = request.GetRequestStream())
-            {
-                SOAPReqBody.Save(stream);
-            }
-            //  geting response from request    
-            try
-            {
-
-                using (WebResponse Serviceres = request.GetResponse())
-                {
-                    using (StreamReader rd = new StreamReader(Serviceres.GetResponseStream()))
-                    {
-                        //reading stream    
-                        var serviceResult = rd.ReadToEnd();
-
-                        XElement parsingServiceResult = XElement.Parse( serviceResult );
-                        //writting stream result on console
-                        Console.WriteLine( parsingServiceResult );
-                        Console.WriteLine( "------------------------------------------------\n" );
-                        //Console.ReadLine();
-                    }
-                }
-            }
-            catch( System.Net.WebException e )
-            {
-                Console.WriteLine( String.Format( "ERROR!!! {0}\n", e.ToString() ) );
-                Console.WriteLine( "------------------------------------------------\n" );
-            }
+            //  return xml soap document
+            return soapEnvelopeDocument;
         }
     }
 }
