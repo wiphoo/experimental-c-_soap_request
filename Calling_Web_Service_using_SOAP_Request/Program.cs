@@ -10,6 +10,7 @@ using System.Xml;
 //  assert
 using System.Diagnostics;
 using System.Xml.Linq;
+using System.Data.SqlClient;
 
 //  ref -   https://www.c-sharpcorner.com/article/calling-web-service-using-soap-request/
 //          https://stackoverflow.com/questions/4791794/client-to-send-soap-request-and-received-response?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
@@ -92,6 +93,49 @@ namespace Calling_Web_Service_using_SOAP_Request
             //                }
             //            }
 
+            //  get the hamonize code
+            List<string> harmonizeCodeList = new List<string>();
+            {
+                //  get the hamonize code from database
+
+                //  construct the connection string to database
+                string connectionString = String.Format( @"Data Source={0}; Initial Catalog={1}; User Id={2}; Password={3};",
+                                                                Configs.databaseHostName, Configs.databaseName,
+                                                                Configs.databaseUserName, Configs.databaseUserPassword );
+                //string connectionString = String.Format( @"Data Source={0}; Initial Catalog={1}; Integrated Security=True;",
+                //                                                 Configs.databaseHostName, Configs.databaseHostName );
+
+                //  construct the query for the hamonize code
+                string queryString = String.Format( @"SELECT DISTINCT [{0}] FROM [{1}].[{2}].[{3}]", 
+                                                        Configs.harmonizeCodeColumnName, Configs.databaseName, 
+                                                        Configs.tableNamespace, Configs.harmonizeCodeTableName );
+
+                //  open a connection to sql server to query the hamonize code
+                using ( SqlConnection connection = new SqlConnection( connectionString ) )
+                {
+                    //  open a conneciton with database
+                    connection.Open();
+
+                    //  create query command
+                    SqlCommand command = new SqlCommand( queryString, connection );
+                    SqlDataReader reader = command.ExecuteReader();
+                    try
+                    {
+                        while ( reader.Read() )
+                        {
+                            //  get a hamonize code
+                            string hamonizeCode = reader["HS Code"].ToString();
+                            //  add it to the list
+                            harmonizeCodeList.Add( hamonizeCode );
+                        }
+                    }
+                    finally
+                    {
+                        // Always call Close when done reading.
+                        reader.Close();
+                    }
+                }
+            }
 
             //  export hamonize country
             {
@@ -100,10 +144,22 @@ namespace Calling_Web_Service_using_SOAP_Request
                         actionGetExportHamonizeCountry = "http://tempuri.org/GetExportHarmonizeCountry";
 
                 //  call a request
-                HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
-                XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( 2017, 8, "390410", 2 );
-                callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
+                
+                //  loop over all homonize code and call the web service
+                foreach( string hamonizeCode in harmonizeCodeList )
+                {
+                    //  construct the steam for request
+                    HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
 
+                    //  construct the xml envelope based on the year, month, harmonize code and number of ranks
+                    XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( 2017, 8, hamonizeCode, 2 );
+
+                    //  call web service
+                    callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
+
+                    //  delay a bit
+                    System.Threading.Thread.Sleep( 5000 );
+                }
                 Console.WriteLine( "--------------------------------------------------" );
             }
 
@@ -115,7 +171,7 @@ namespace Calling_Web_Service_using_SOAP_Request
 
                 //  call a request
                 HttpWebRequest requestGetImportHamonizeCountry = createSOAPWebRequest( urlGetImportHamonizeCountry, actionGetImportHamonizeCountry );
-                XmlDocument envelopeGetImportHamonizeCountry = createSOAPEnvelopeForGetImportHarmonizeCountry( 2017, 8, "271114", 100 );
+                XmlDocument envelopeGetImportHamonizeCountry = createSOAPEnvelopeForGetImportHarmonizeCountry( 2017, 8, "271114", 5 );
                 callWebService( requestGetImportHamonizeCountry, envelopeGetImportHamonizeCountry );
 
                 Console.WriteLine( "--------------------------------------------------" );
@@ -176,7 +232,7 @@ namespace Calling_Web_Service_using_SOAP_Request
         
         public static XmlDocument createSOAPEnvelopeForGetExportHarmonizeCountry( int year, int month, string harmonizeCode, int numRanks )
         {
-            Console.WriteLine( String.Format( "createSOAPEnvelopeForGetExportHarmonizeCountry : ( year = {0}, month = {1}, hamonize code = {2}, number of rnaks = {3} )", year.ToString(), month.ToString(), harmonizeCode, numRanks.ToString()  ) );
+            Console.WriteLine( String.Format( "createSOAPEnvelopeForGetExportHarmonizeCountry : ( year = {0}, month = {1}, hamonize code = {2}, number of ranks = {3} )", year.ToString(), month.ToString(), harmonizeCode, numRanks.ToString()  ) );
             //  create empty SOAP envelope document
             XmlDocument soapEnvelopeDocument = new XmlDocument();
 
