@@ -22,78 +22,10 @@ namespace Calling_Web_Service_using_SOAP_Request
     {
         static void Main(string[] args)
         {
-            //creating object of program class to access methods    
-            //Program obj = new Program();
+            //  this program will query the data from last 2 months
 
-            //Console.WriteLine("Please Enter Input values..");
-            ////Reading input values from console
-
-            ////  Year
-            //Console.Write("Enter from year : ");
-            //int fromYear = Convert.ToInt32(Console.ReadLine());
-            //Console.Write("      to year : ");
-            //int toYear = Convert.ToInt32(Console.ReadLine());
-
-            ////  Month
-            //Console.Write("Enter from month : ");
-            //int fromMonth = Convert.ToInt32(Console.ReadLine());
-            //Console.Write("      to month : ");
-            //int toMonth = Convert.ToInt32(Console.ReadLine());
-
-#warning UNCOMMENT_ME
-            ////  harmonize code
-            //Console.Write("Enter harmonize code (csv file name) : ");
-            //string harmonizeCodeCsvFileName = Convert.ToString(Console.ReadLine());
-            //List<string> harmonizeCodeList = new List<string>();
-            ////  parsing csv file to a list of harmonize code
-            //{
-            //    //  read a csv harmonize file
-            //    string[] harmonizeLines = System.IO.File.ReadAllLines( harmonizeCodeCsvFileName );
-
-            //    //  strip the harmonize code that is a first element in the csv file
-            //    foreach( string harmonizeLine in harmonizeLines )
-            //    {
-            //        //  strip the comma ','
-            //        List<string> harmonizeLineSplit = harmonizeLine.Split( ',' ).ToList();
-            //        Debug.Assert( harmonizeLineSplit.Count >= 1 );
-
-            //        //  get the harmonize code
-            //        string harmonizeCode = harmonizeLineSplit.ElementAt( 0 ).ToString();
-            //        Debug.Assert( !string.IsNullOrEmpty( harmonizeCode ) );
-
-            //        //  get the first element
-            //        harmonizeCodeList.Add( harmonizeCode );
-            //    }
-            //}
-
-            //#warning REMOVE_ME :: TESTING PURPOSE
-            //            //  harmonize code
-            //            Console.Write("Enter harmonize code : ");
-            //            string harmonizeCodeStr = Convert.ToString(Console.ReadLine());
-            //            List<string> harmonizeCodeList = new List<string>();
-            //            harmonizeCodeList.Add( harmonizeCodeStr );
-
-            //            //  rank
-            //            //Console.Write("Enter from rank : ");
-            //            //int fromRank = Convert.ToInt32(Console.ReadLine());
-            //            //Console.Write("      to rank : ");
-            //            //int toRank = Convert.ToInt32(Console.ReadLine());
-            //            Console.Write( "Enter number of rank : " );
-            //            int numRanks = Convert.ToInt32(Console.ReadLine());
-
-            //            //  loop over all year/month/rank and call the service
-            //            for ( int year = fromYear ; year <= toYear ; ++ year )
-            //            {
-            //                for( int month = fromMonth ; month <= toMonth ; ++ month )
-            //                {
-            //                    foreach( string harmonizeCode in harmonizeCodeList )
-            //                    {
-            //                        //  Calling InvokeService method    
-            //                        obj.InvokeServiceExportHarmonizeCountry( year, month, numRanks, harmonizeCode );
-            //                    }
-            //                }
-            //            }
-
+            //  get the current date
+            DateTime currentLocalDate = DateTime.Now;
 
             //  construct the connection string to database
             string connectionString = String.Format( @"Data Source={0}; Initial Catalog={1}; User Id={2}; Password={3};",
@@ -136,7 +68,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                 }
             }
 
-            //  export hamonize country
+            //  export hs code country
             {
                 //  create the url and action
                 string urlGetExportHamonizeCountry = @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceExportHarmonizeCountry.asmx",
@@ -148,40 +80,56 @@ namespace Calling_Web_Service_using_SOAP_Request
                 //      harmonizeCode, year, month, abbrCode (as primary keys)
                 //      enName, qty, accQty, valueBaht, accBath, valueUSD, accUSD
 
-                //  loop over all homonize code and call the web service
-                foreach( string hsCode in hsCodeList )
+                //  get the data from last 2 months
+
+                //  get current year
+
+                //  calculate start/end month
+                DateTime startDate = currentLocalDate.AddMonths( -2 ),
+                            endDate = currentLocalDate.AddMonths( -1 );
+
+                //  loop from last 2 month to last month and call webservice query then store the response data to database
+                for( DateTime currentDate = startDate ;
+                                currentDate < endDate ;
+                                currentDate.AddMonths( 1 ) )
                 {
-                    //  construct the steam for request
-                    HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
+                    Console.WriteLine( String.Format( "getting / storing export HS data on year = {0}, month = {1}.................", currentDate.Year, currentDate.Month ) );
 
-                    //  construct the xml envelope based on the year, month, harmonize code and number of ranks
-                    XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( 2017, 8, hsCode, 2 );
+                    //  loop over all homonize code and call the web service
+                    foreach( string hsCode in hsCodeList )
+                    {
+                        //  construct the steam for request
+                        HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
 
-                    //  call web service
-                    string response = callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
+                        //  construct the xml envelope based on the year, month, harmonize code and number of ranks
+                        XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( currentDate.Year, currentDate.Month, hsCode, 2 );
 
-                    //  parse response
-                    parseAndStoreSOAPGetExportHarmonizeCountryResponse( hsCode, response, connectionString );
+                        //  call web service
+                        string response = callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
 
-                    //  delay a bit
-                    System.Threading.Thread.Sleep( 5000 );
+                        //  parse response
+                        parseAndStoreSOAPGetExportHarmonizeCountryResponse( hsCode, response, connectionString );
+
+                        //  delay a bit
+                        System.Threading.Thread.Sleep( 5000 );
+                    }
                 }
                 Console.WriteLine( "--------------------------------------------------" );
             }
 
-            //  import hamonize country
-            {
-                //  create the url and action
-                string urlGetImportHamonizeCountry = @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceImportHarmonizeCountry.asmx",
-                        actionGetImportHamonizeCountry = "http://tempuri.org/GetImportHarmonizeCountry";
+            ////  import hamonize country
+            //{
+            //    //  create the url and action
+            //    string urlGetImportHamonizeCountry = @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceImportHarmonizeCountry.asmx",
+            //            actionGetImportHamonizeCountry = "http://tempuri.org/GetImportHarmonizeCountry";
 
-                //  call a request
-                HttpWebRequest requestGetImportHamonizeCountry = createSOAPWebRequest( urlGetImportHamonizeCountry, actionGetImportHamonizeCountry );
-                XmlDocument envelopeGetImportHamonizeCountry = createSOAPEnvelopeForGetImportHarmonizeCountry( 2017, 8, "271114", 5 );
-                callWebService( requestGetImportHamonizeCountry, envelopeGetImportHamonizeCountry );
+            //    //  call a request
+            //    HttpWebRequest requestGetImportHamonizeCountry = createSOAPWebRequest( urlGetImportHamonizeCountry, actionGetImportHamonizeCountry );
+            //    XmlDocument envelopeGetImportHamonizeCountry = createSOAPEnvelopeForGetImportHarmonizeCountry( 2017, 8, "271114", 5 );
+            //    callWebService( requestGetImportHamonizeCountry, envelopeGetImportHamonizeCountry );
 
-                Console.WriteLine( "--------------------------------------------------" );
-            }
+            //    Console.WriteLine( "--------------------------------------------------" );
+            //}
 
             //  wait for a key press to exit
             Console.ReadLine();
@@ -288,9 +236,6 @@ namespace Calling_Web_Service_using_SOAP_Request
                 string insertOrUpdateSqlStatement = String.Format( @"INSERT INTO {11}.{12}.{13} ( {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10} ) "
                                                                     + @"VALUES( @hsCode, @year, @month, @abbrCode, @enName, @qty, @accQty, "
                                                                                + @"@valueBaht, @accValueBaht, @valueUsd, @accValueUsd ) ",
-                                                                    //+ @"ON DUPLICATE KEY UPDATE {4} = @enName, {5} = @qty, {6} = @accQty, "
-                                                                    //                            + @"{7} = @valueBaht, {8} = @accValueBaht, "
-                                                                    //                            + @"{9} = @valueUsd, {10} = @accValueUsd",
                                                                     //  values
                                                                     Configs.exportHsCodeColumnName, Configs.exportYearColumnName, Configs.exportMonthColumnName,
                                                                     Configs.exportAbbrColumnName, Configs.exportEnNameColumnName,
