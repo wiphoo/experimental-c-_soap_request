@@ -16,6 +16,10 @@ using System.Data;
 //  ref -   https://www.c-sharpcorner.com/article/calling-web-service-using-soap-request/
 //          https://stackoverflow.com/questions/4791794/client-to-send-soap-request-and-received-response?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 
+//  TODO
+//      - implement for import hs code
+//      - do a config file
+
 namespace Calling_Web_Service_using_SOAP_Request
 {
     class Program
@@ -102,7 +106,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                         HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
 
                         //  construct the xml envelope based on the year, month, harmonize code and number of ranks
-                        XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( currentDate.Year, currentDate.Month, hsCode, 2 );
+                        XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( currentDate.Year, currentDate.Month, hsCode, Configs.numRanks );
 
                         //  call web service
                         string response = callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );

@@ -8,6 +8,15 @@ namespace Calling_Web_Service_using_SOAP_Request
 {
     class Configs
     {
+        //////////////////////////////////////////////////////////////////////////////////
+        //  call webservice properties
+
+        //  number of ranks
+        public static int numRanks = 10;
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //  database
+
         //  database host name
         public static string databaseHostName = @"FARADAY-PC";
 
