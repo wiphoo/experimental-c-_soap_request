@@ -21,11 +21,11 @@ namespace Calling_Web_Service_using_SOAP_Request
         //  table namespace
         public static string tableNamespace = @"dbo";
 
-        //  harmonize code table name
-        public static string harmonizeCodeTableName  = @"hs_code";
+        //  harmonized system code table name
+        public static string hsCodeTableName  = @"hs_code";
 
-        //  harmonize code column name
-        public static string harmonizeCodeColumnName = @"HS Code";
+        //  harmonized system code column name
+        public static string hsCodeColumnName = @"HS Code";
 
     }
 }

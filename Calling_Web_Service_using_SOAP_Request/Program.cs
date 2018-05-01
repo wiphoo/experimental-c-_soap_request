@@ -93,22 +93,20 @@ namespace Calling_Web_Service_using_SOAP_Request
             //                }
             //            }
 
+
+            //  construct the connection string to database
+            string connectionString = String.Format( @"Data Source={0}; Initial Catalog={1}; User Id={2}; Password={3};",
+                                                            Configs.databaseHostName, Configs.databaseName,
+                                                            Configs.databaseUserName, Configs.databaseUserPassword );
             //  get the hamonize code
             List<string> harmonizeCodeList = new List<string>();
             {
                 //  get the hamonize code from database
 
-                //  construct the connection string to database
-                string connectionString = String.Format( @"Data Source={0}; Initial Catalog={1}; User Id={2}; Password={3};",
-                                                                Configs.databaseHostName, Configs.databaseName,
-                                                                Configs.databaseUserName, Configs.databaseUserPassword );
-                //string connectionString = String.Format( @"Data Source={0}; Initial Catalog={1}; Integrated Security=True;",
-                //                                                 Configs.databaseHostName, Configs.databaseHostName );
-
                 //  construct the query for the hamonize code
                 string queryString = String.Format( @"SELECT DISTINCT [{0}] FROM [{1}].[{2}].[{3}]", 
-                                                        Configs.harmonizeCodeColumnName, Configs.databaseName, 
-                                                        Configs.tableNamespace, Configs.harmonizeCodeTableName );
+                                                        Configs.hsCodeColumnName, Configs.databaseName, 
+                                                        Configs.tableNamespace, Configs.hsCodeTableName );
 
                 //  open a connection to sql server to query the hamonize code
                 using ( SqlConnection connection = new SqlConnection( connectionString ) )
@@ -124,7 +122,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                         while ( reader.Read() )
                         {
                             //  get a hamonize code
-                            string hamonizeCode = reader["HS Code"].ToString();
+                            string hamonizeCode = reader[Configs.hsCodeColumnName].ToString();
                             //  add it to the list
                             harmonizeCodeList.Add( hamonizeCode );
                         }
@@ -145,6 +143,10 @@ namespace Calling_Web_Service_using_SOAP_Request
 
                 //  call a request
                 
+                //  open a connection for updating the harmonize code data including 
+                //      harmonizeCode, year, month, abbrCode (as primary keys)
+                //      enName, qty, accQty, valueBaht, accBath, valueUSD, accUSD
+
                 //  loop over all homonize code and call the web service
                 foreach( string hamonizeCode in harmonizeCodeList )
                 {
@@ -155,7 +157,10 @@ namespace Calling_Web_Service_using_SOAP_Request
                     XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( 2017, 8, hamonizeCode, 2 );
 
                     //  call web service
-                    callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
+                    string response = callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
+
+                    //  parse response
+                    parseAndStoreSOAPGetExportHarmonizeCountryResponse( response );
 
                     //  delay a bit
                     System.Threading.Thread.Sleep( 5000 );
@@ -195,7 +200,7 @@ namespace Calling_Web_Service_using_SOAP_Request
             return webRequest;
         }
 
-        public static void callWebService( HttpWebRequest request, XmlDocument envelope )
+        public static string callWebService( HttpWebRequest request, XmlDocument envelope )
         {
             //  insert the envelope into web request
             using ( Stream stream = request.GetRequestStream() )
@@ -214,25 +219,24 @@ namespace Calling_Web_Service_using_SOAP_Request
             string soapResponse;
             using ( WebResponse webResponse = request.EndGetResponse( asyncResult ) )
             {
+                //  create a reader stream and read response
                 using ( StreamReader streamReader = new StreamReader( webResponse.GetResponseStream() ) )
                 {
+                    //  read response
                     soapResponse = streamReader.ReadToEnd();
                 }
-
-                //  parse response
-                XElement response = XElement.Parse( soapResponse );
-
-                //  writting stream result on console
-                Console.WriteLine( response );
             }
-        }
 
+            //  return response
+            return soapResponse;
+        }
+        
         //-----------------------------------------------------------------------------------------------------------------
         //  GetExportHarmonizeCountry
         
-        public static XmlDocument createSOAPEnvelopeForGetExportHarmonizeCountry( int year, int month, string harmonizeCode, int numRanks )
+        public static XmlDocument createSOAPEnvelopeForGetExportHarmonizeCountry( int year, int month, string hsCode, int numRanks )
         {
-            Console.WriteLine( String.Format( "createSOAPEnvelopeForGetExportHarmonizeCountry : ( year = {0}, month = {1}, hamonize code = {2}, number of ranks = {3} )", year.ToString(), month.ToString(), harmonizeCode, numRanks.ToString()  ) );
+            Console.WriteLine( String.Format( "createSOAPEnvelopeForGetExportHarmonizeCountry : ( year = {0}, month = {1}, hs code = {2}, number of ranks = {3} )", year.ToString(), month.ToString(), hsCode, numRanks.ToString()  ) );
             //  create empty SOAP envelope document
             XmlDocument soapEnvelopeDocument = new XmlDocument();
 
@@ -243,7 +247,7 @@ namespace Calling_Web_Service_using_SOAP_Request
             <GetExportHarmonizeCountry xmlns=""http://tempuri.org/"">
                 <Yearno>" + year + @"</Yearno>
                 <Monthno>" + month + @"</Monthno>
-                <HarmonizeCode>" + harmonizeCode + @"</HarmonizeCode>
+                <HarmonizeCode>" + hsCode + @"</HarmonizeCode>
                 <NoRank>" + numRanks + @" </NoRank>
             </GetExportHarmonizeCountry>
         </soap12:Body>
@@ -253,12 +257,57 @@ namespace Calling_Web_Service_using_SOAP_Request
             return soapEnvelopeDocument;
         }
 
+        public static void parseAndStoreSOAPGetExportHarmonizeCountryResponse( string response )
+        {
+            //  parse reponse to XElement
+            XElement xmlElementReponse = XElement.Parse( response );
+            Console.WriteLine( xmlElementReponse );
+
+            //  construct namespace for xElement
+            XNamespace soapEnvelopNamespace = @"http://www.w3.org/2003/05/soap-envelope",
+                            xsiNamespace = @"http://www.w3.org/2001/XMLSchema-instance",
+                            xsdNamespace = @"http://www.w3.org/2001/XMLSchema",
+                            tempuriNamespace = @"http://tempuri.org/",
+                            msdataNamespace = @"urn:schemas-microsoft-com:xml-msdata",
+                            diffgrNamespace = @"urn:schemas-microsoft-com:xml-diffgram-v1";
+
+            //  get the body, response and resolt element
+            XElement body = xmlElementReponse.Element( soapEnvelopNamespace + @"Body" ),
+                        getExportHarmonizeCountryResponse = body.Element( tempuriNamespace + @"GetExportHarmonizeCountryResponse"  ),
+                        getExportHarmonizeCountryResult = getExportHarmonizeCountryResponse.Element( tempuriNamespace + @"GetExportHarmonizeCountryResult" );
+
+            //  loop over all results, and create or update database
+            foreach( XElement results in getExportHarmonizeCountryResult.Elements( diffgrNamespace + @"diffgram" ) )
+            {
+                //  get document and export element
+                XElement document = results.Element( @"DocumentElement" ),
+                            export = document.Element( @"Export" );
+
+                //  extract data
+                int year = Convert.ToInt32( export.Element( @"YearNo").Value ),
+                    month = Convert.ToInt32( export.Element( @"MonthNo" ).Value );
+                string abbrCode = export.Element( @"AbbrCode" ).Value,
+                        enName = export.Element( @"EnName" ).Value;
+                double qty = Convert.ToDouble( export.Element( @"QTY" ).Value ),
+                        accQty = Convert.ToDouble( export.Element( @"AccQTY" ).Value ),
+                        valueBaht = Convert.ToDouble( export.Element( @"ValueBaht" ).Value ),
+                        accValueBaht = Convert.ToDouble( export.Element( @"AccValueBaht").Value ),
+                        valueUsd = Convert.ToDouble( export.Element( @"ValueUSD" ).Value ),
+                        accValueUsd = Convert.ToDouble( export.Element( @"AccValueUSD").Value );
+
+            }
+
+
+
+
+        }
+
         //-----------------------------------------------------------------------------------------------------------------
         //  GetImportHarmonizeCountry
 
-        public static XmlDocument createSOAPEnvelopeForGetImportHarmonizeCountry( int year, int month, string harmonizeCode, int numRanks )
+        public static XmlDocument createSOAPEnvelopeForGetImportHarmonizeCountry( int year, int month, string hsCode, int numRanks )
         {
-            Console.WriteLine( String.Format( "createSOAPEnvelopeForGetImportHarmonizeCountry : ( year = {0}, month = {1}, harmonize code = {2}, number of rank = {3} )", year.ToString(), month.ToString(), harmonizeCode, numRanks.ToString() ) );
+            Console.WriteLine( String.Format( "createSOAPEnvelopeForGetImportHarmonizeCountry : ( year = {0}, month = {1}, hs code = {2}, number of rank = {3} )", year.ToString(), month.ToString(), hsCode, numRanks.ToString() ) );
             //  create empty SOAP envelope document
             XmlDocument soapEnvelopeDocument = new XmlDocument();
 
@@ -269,7 +318,7 @@ namespace Calling_Web_Service_using_SOAP_Request
             <GetImportHarmonizeCountry xmlns=""http://tempuri.org/"">
                 <Yearno>" + year + @"</Yearno>
                 <Monthno>" + month + @"</Monthno>
-                <HarmonizeCode>" + harmonizeCode + @"</HarmonizeCode>
+                <HarmonizeCode>" + hsCode + @"</HarmonizeCode>
                 <NoRank>" + numRanks + @" </NoRank>
             </GetImportHarmonizeCountry>
         </soap12:Body>
