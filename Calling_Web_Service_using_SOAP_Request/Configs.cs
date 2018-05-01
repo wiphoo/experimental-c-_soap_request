@@ -21,11 +21,44 @@ namespace Calling_Web_Service_using_SOAP_Request
         //  table namespace
         public static string tableNamespace = @"dbo";
 
+        //////////////////////////////////////////////////////////////////////////////////
+        //  HS code table
+
         //  harmonized system code table name
-        public static string hsCodeTableName  = @"hs_code";
+        public static string hsCodeTableName = @"hs_code";
 
         //  harmonized system code column name
         public static string hsCodeColumnName = @"HS Code";
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //  export table
+
+        //  export table name
+        public static string exportTableName = @"MOC_Export";
+
+        //  export columns
+        //      HS code
+        public static string exportHsCodeColumnName = @"HS_Code";
+        //      year
+        public static string exportYearColumnName = @"YearNo";
+        //      month
+        public static string exportMonthColumnName = @"MonthNo";
+        //      abbr code
+        public static string exportAbbrColumnName = @"AbbrCode";
+        //      en name
+        public static string exportEnNameColumnName = @"EnName";
+        //      qty
+        public static string exportQtyColumnName = @"QTY";
+        //      acc qty
+        public static string exportAccQtyColumnName = @"AccQTY";
+        //      value baht
+        public static string exportValueBahtColumnName = @"ValueBaht";
+        //      acc value baht
+        public static string exportAccValueBahtColumnName = @"AccValueBaht";
+        //      value usd
+        public static string exportValueUsdColumnName = @"ValueUsd";
+        //      acc value usd
+        public static string exportAccValueUsdColumnName = @"AccValueUSD";
 
     }
 }

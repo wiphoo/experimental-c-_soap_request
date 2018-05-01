@@ -11,6 +11,7 @@ using System.Xml;
 using System.Diagnostics;
 using System.Xml.Linq;
 using System.Data.SqlClient;
+using System.Data;
 
 //  ref -   https://www.c-sharpcorner.com/article/calling-web-service-using-soap-request/
 //          https://stackoverflow.com/questions/4791794/client-to-send-soap-request-and-received-response?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
@@ -99,7 +100,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                                                             Configs.databaseHostName, Configs.databaseName,
                                                             Configs.databaseUserName, Configs.databaseUserPassword );
             //  get the hamonize code
-            List<string> harmonizeCodeList = new List<string>();
+            List<string> hsCodeList = new List<string>();
             {
                 //  get the hamonize code from database
 
@@ -122,9 +123,9 @@ namespace Calling_Web_Service_using_SOAP_Request
                         while ( reader.Read() )
                         {
                             //  get a hamonize code
-                            string hamonizeCode = reader[Configs.hsCodeColumnName].ToString();
+                            string hsCode = reader[Configs.hsCodeColumnName].ToString();
                             //  add it to the list
-                            harmonizeCodeList.Add( hamonizeCode );
+                            hsCodeList.Add( hsCode );
                         }
                     }
                     finally
@@ -148,19 +149,19 @@ namespace Calling_Web_Service_using_SOAP_Request
                 //      enName, qty, accQty, valueBaht, accBath, valueUSD, accUSD
 
                 //  loop over all homonize code and call the web service
-                foreach( string hamonizeCode in harmonizeCodeList )
+                foreach( string hsCode in hsCodeList )
                 {
                     //  construct the steam for request
                     HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
 
                     //  construct the xml envelope based on the year, month, harmonize code and number of ranks
-                    XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( 2017, 8, hamonizeCode, 2 );
+                    XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( 2017, 8, hsCode, 2 );
 
                     //  call web service
                     string response = callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
 
                     //  parse response
-                    parseAndStoreSOAPGetExportHarmonizeCountryResponse( response );
+                    parseAndStoreSOAPGetExportHarmonizeCountryResponse( hsCode, response, connectionString );
 
                     //  delay a bit
                     System.Threading.Thread.Sleep( 5000 );
@@ -257,7 +258,7 @@ namespace Calling_Web_Service_using_SOAP_Request
             return soapEnvelopeDocument;
         }
 
-        public static void parseAndStoreSOAPGetExportHarmonizeCountryResponse( string response )
+        public static void parseAndStoreSOAPGetExportHarmonizeCountryResponse( string hsCode, string response, string connectionString )
         {
             //  parse reponse to XElement
             XElement xmlElementReponse = XElement.Parse( response );
@@ -276,29 +277,84 @@ namespace Calling_Web_Service_using_SOAP_Request
                         getExportHarmonizeCountryResponse = body.Element( tempuriNamespace + @"GetExportHarmonizeCountryResponse"  ),
                         getExportHarmonizeCountryResult = getExportHarmonizeCountryResponse.Element( tempuriNamespace + @"GetExportHarmonizeCountryResult" );
 
-            //  loop over all results, and create or update database
-            foreach( XElement results in getExportHarmonizeCountryResult.Elements( diffgrNamespace + @"diffgram" ) )
+
+            //  open a connection to sql server to query the hamonize code
+            using ( SqlConnection connection = new SqlConnection( connectionString ) )
             {
-                //  get document and export element
-                XElement document = results.Element( @"DocumentElement" ),
+                //  open a conneciton with database
+                connection.Open();
+
+                //  create a sql statement string
+                string insertOrUpdateSqlStatement = String.Format( @"INSERT INTO {11}.{12}.{13} ( {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10} ) "
+                                                                    + @"VALUES( @hsCode, @year, @month, @abbrCode, @enName, @qty, @accQty, "
+                                                                               + @"@valueBaht, @accValueBaht, @valueUsd, @accValueUsd ) ",
+                                                                    //+ @"ON DUPLICATE KEY UPDATE {4} = @enName, {5} = @qty, {6} = @accQty, "
+                                                                    //                            + @"{7} = @valueBaht, {8} = @accValueBaht, "
+                                                                    //                            + @"{9} = @valueUsd, {10} = @accValueUsd",
+                                                                    //  values
+                                                                    Configs.exportHsCodeColumnName, Configs.exportYearColumnName, Configs.exportMonthColumnName,
+                                                                    Configs.exportAbbrColumnName, Configs.exportEnNameColumnName,
+                                                                    Configs.exportQtyColumnName, Configs.exportAccQtyColumnName,
+                                                                    Configs.exportValueBahtColumnName, Configs.exportAccValueBahtColumnName,
+                                                                    Configs.exportValueUsdColumnName, Configs.exportAccValueUsdColumnName,
+                                                                    // database/table
+                                                                    Configs.databaseName, Configs.tableNamespace, Configs.exportTableName );
+
+
+                //  construct a sql command to do insert or update
+                SqlCommand sqlCommand = new SqlCommand( insertOrUpdateSqlStatement, connection );
+                sqlCommand.Parameters.Add( "@hsCode", SqlDbType.NVarChar, 100 );
+                sqlCommand.Parameters.Add( "@year", SqlDbType.Int );
+                sqlCommand.Parameters.Add( "@month", SqlDbType.TinyInt );
+                sqlCommand.Parameters.Add( "@abbrCode", SqlDbType.NVarChar, 255 );
+                sqlCommand.Parameters.Add( "@enName", SqlDbType.NVarChar, 255 );
+                sqlCommand.Parameters.Add( "@qty", SqlDbType.Decimal, 28 );
+                sqlCommand.Parameters.Add( "@accQty", SqlDbType.Decimal, 28 );
+                sqlCommand.Parameters.Add( "@valueBaht", SqlDbType.Decimal, 28 );
+                sqlCommand.Parameters.Add( "@accValueBaht", SqlDbType.Decimal, 28 );
+                sqlCommand.Parameters.Add( "@valueUsd", SqlDbType.Decimal, 28 );
+                sqlCommand.Parameters.Add( "@accValueUsd", SqlDbType.Decimal, 28 );
+
+
+                //  loop over all results, and create or update database
+                foreach ( XElement results in getExportHarmonizeCountryResult.Elements( diffgrNamespace + @"diffgram" ) )
+                {
+                    //  get document and export element
+                    XElement document = results.Element( @"DocumentElement" ),
                             export = document.Element( @"Export" );
 
-                //  extract data
-                int year = Convert.ToInt32( export.Element( @"YearNo").Value ),
-                    month = Convert.ToInt32( export.Element( @"MonthNo" ).Value );
-                string abbrCode = export.Element( @"AbbrCode" ).Value,
-                        enName = export.Element( @"EnName" ).Value;
-                double qty = Convert.ToDouble( export.Element( @"QTY" ).Value ),
-                        accQty = Convert.ToDouble( export.Element( @"AccQTY" ).Value ),
-                        valueBaht = Convert.ToDouble( export.Element( @"ValueBaht" ).Value ),
-                        accValueBaht = Convert.ToDouble( export.Element( @"AccValueBaht").Value ),
-                        valueUsd = Convert.ToDouble( export.Element( @"ValueUSD" ).Value ),
-                        accValueUsd = Convert.ToDouble( export.Element( @"AccValueUSD").Value );
+                    //  extract data
+                    int year = Convert.ToInt32( export.Element( @"YearNo").Value ),
+                        month = Convert.ToInt32( export.Element( @"MonthNo" ).Value );
+                    string abbrCode = export.Element( @"AbbrCode" ).Value,
+                            enName = export.Element( @"EnName" ).Value;
+                    decimal qty = Convert.ToDecimal( export.Element( @"QTY" ).Value ),
+                            accQty = Convert.ToDecimal( export.Element( @"AccQTY" ).Value ),
+                            valueBaht = Convert.ToDecimal( export.Element( @"ValueBaht" ).Value ),
+                            accValueBaht = Convert.ToDecimal( export.Element( @"AccValueBaht").Value ),
+                            valueUsd = Convert.ToDecimal( export.Element( @"ValueUSD" ).Value ),
+                            accValueUsd = Convert.ToDecimal( export.Element( @"AccValueUSD").Value );
 
+                    //  create a sql command for insert or update if exists
+
+                    //  update parameters
+                    sqlCommand.Parameters["@hsCode"].Value = hsCode;
+                    sqlCommand.Parameters["@year"].Value = year;
+                    sqlCommand.Parameters["@month"].Value = month;
+                    sqlCommand.Parameters["@abbrCode"].Value = abbrCode;
+                    sqlCommand.Parameters["@enName"].Value = enName;
+                    sqlCommand.Parameters["@qty"].Value = qty;
+                    sqlCommand.Parameters["@accQty"].Value = accQty;
+                    sqlCommand.Parameters["@valueBaht"].Value = valueBaht;
+                    sqlCommand.Parameters["@accValueBaht"].Value = accValueBaht;
+                    sqlCommand.Parameters["@valueUsd"].Value = valueUsd;
+                    sqlCommand.Parameters["@accValueUsd"].Value = accValueUsd;
+
+                    //  execulte sql command
+                    sqlCommand.ExecuteNonQuery();
+
+                }
             }
-
-
-
 
         }
 
