@@ -161,27 +161,52 @@ namespace Calling_Web_Service_using_SOAP_Request
                 envelope.Save( stream );
             }
 
-            // begin async call to web request.
-            IAsyncResult asyncResult = request.BeginGetResponse( null, null );
-
-            // suspend this thread until call is complete. You might want to
-            // do something usefull here like update your UI.
-            asyncResult.AsyncWaitHandle.WaitOne();
-
-            // get the response from the completed web request.
-            string soapResponse;
-            using ( WebResponse webResponse = request.EndGetResponse( asyncResult ) )
+            //  loop until we can get the response from web service
+            //      mostly except we found now is "The remote server returned an error: (500) Internal Server Error." 
+            int wait_ms = 600000;
+            while( true )
             {
-                //  create a reader stream and read response
-                using ( StreamReader streamReader = new StreamReader( webResponse.GetResponseStream() ) )
+                //  catch the exception from webservice
+                try
                 {
-                    //  read response
-                    soapResponse = streamReader.ReadToEnd();
+                    // begin async call to web request.
+                    IAsyncResult asyncResult = request.BeginGetResponse( null, null );
+
+                    // suspend this thread until call is complete. You might want to
+                    // do something usefull here like update your UI.
+                    asyncResult.AsyncWaitHandle.WaitOne();
+
+                    // get the response from the completed web request.
+                    string soapResponse;
+                    using ( WebResponse webResponse = request.EndGetResponse( asyncResult ) )
+                    {
+                        //  create a reader stream and read response
+                        using ( StreamReader streamReader = new StreamReader( webResponse.GetResponseStream() ) )
+                        {
+                            //  read response
+                            soapResponse = streamReader.ReadToEnd();
+                        }
+                    }
+
+                    //  we got a response, done
+
+                    //  return response
+                    return soapResponse;
+                }
+                catch( System.Net.WebException e )
+                //  got an excpetion when call the web service, so wait
+                {
+                    //  calculate wait minutes
+                    int wait_mins = ( wait_ms / 1000 / 60 );
+                    Console.WriteLine( String.Format( "ERROR!!! Cannot get a response from webservice.\n Message = {0}\n Waiting {1} mins before call again.", e, wait_mins ) );
+
+                    //  delay a bit
+                    System.Threading.Thread.Sleep( wait_ms );
+
+                    //  increase wait secs
+                    wait_ms *= 2;
                 }
             }
-
-            //  return response
-            return soapResponse;
         }
         
         //-----------------------------------------------------------------------------------------------------------------
@@ -224,11 +249,17 @@ namespace Calling_Web_Service_using_SOAP_Request
                             msdataNamespace = @"urn:schemas-microsoft-com:xml-msdata",
                             diffgrNamespace = @"urn:schemas-microsoft-com:xml-diffgram-v1";
 
-            //  get the body, response and resolt element
+            //  get the body, response element
             XElement body = xmlElementReponse.Element( soapEnvelopNamespace + @"Body" ),
-                        getExportHarmonizeCountryResponse = body.Element( tempuriNamespace + @"GetExportHarmonizeCountryResponse"  ),
-                        getExportHarmonizeCountryResult = getExportHarmonizeCountryResponse.Element( tempuriNamespace + @"GetExportHarmonizeCountryResult" );
+                        getExportHarmonizeCountryResponse = body.Element( tempuriNamespace + @"GetExportHarmonizeCountryResponse"  );
 
+            //  check if the response export element has any result element
+            if( getExportHarmonizeCountryResponse.Elements( tempuriNamespace + @"GetExportHarmonizeCountryResult" ).Any() )
+            //  the result doesn't exist, so skip
+                return;
+
+            //  the result exists, so get the result element
+            XElement getExportHarmonizeCountryResult = getExportHarmonizeCountryResponse.Element( tempuriNamespace + @"GetExportHarmonizeCountryResult" );
 
             //  open a connection to sql server to query the hamonize code
             using ( SqlConnection connection = new SqlConnection( connectionString ) )
