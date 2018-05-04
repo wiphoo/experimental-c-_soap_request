@@ -102,20 +102,51 @@ namespace Calling_Web_Service_using_SOAP_Request
                     //  loop over all homonize code and call the web service
                     foreach( string hsCode in hsCodeList )
                     {
-                        //  construct the steam for request
-                        HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
 
-                        //  construct the xml envelope based on the year, month, harmonize code and number of ranks
-                        XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( currentDate.Year, currentDate.Month, hsCode, Configs.numRanks );
+                        //  loop until we can get the response from web service
+                        //      mostly except we found now is "The remote server returned an error: (500) Internal Server Error." 
+                        int wait_ms = 300000;
+                        string response = null;
+                        while( true )
+                        {
+                            //  catch the exception from webservice
+                            try
+                            {
+                                //  construct the steam for request
+                                HttpWebRequest requestGetExportHamonizeCountry = createSOAPWebRequest( urlGetExportHamonizeCountry, actionGetExportHamonizeCountry );
 
-                        //  call web service
-                        string response = callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
+                                //  construct the xml envelope based on the year, month, harmonize code and number of ranks
+                                XmlDocument envelopeGetExportHamonizeCountry = createSOAPEnvelopeForGetExportHarmonizeCountry( currentDate.Year, currentDate.Month, hsCode, Configs.numRanks );
 
+                                //  call web service
+                                response = callWebService( requestGetExportHamonizeCountry, envelopeGetExportHamonizeCountry );
+
+                                //  received response
+                                break;
+                            }
+                            catch ( System.Net.WebException e )
+                            //  got an excpetion when call the web service, so wait
+                            {
+                                //  get current time
+                                DateTime gotWebServiceExceptionLocalDate = DateTime.Now;
+                                //  calculate wait minutes
+                                int wait_mins = ( wait_ms / 1000 / 60 );
+                                Console.WriteLine( String.Format( "ERROR!!! Cannot get a response from webservice.\n Message = {0}\n Waiting {1} mins before call again.\n Got exception from web service at {2} and it will call web service again around {3}", 
+                                                                                    e, wait_mins, gotWebServiceExceptionLocalDate, gotWebServiceExceptionLocalDate.AddMinutes( wait_mins  ) ) );
+
+                                //  delay a bit
+                                System.Threading.Thread.Sleep( wait_ms );
+
+                                //  increase wait secs
+                                wait_ms *= 3;
+                            }
+                        }
+                        
                         //  parse response
                         parseAndStoreSOAPGetExportHarmonizeCountryResponse( hsCode, response, connectionString );
 
                         //  delay a bit
-                        System.Threading.Thread.Sleep( 5000 );
+                        System.Threading.Thread.Sleep( 1000 );
                     }
                 }
                 Console.WriteLine( "--------------------------------------------------" );
@@ -161,52 +192,29 @@ namespace Calling_Web_Service_using_SOAP_Request
                 envelope.Save( stream );
             }
 
-            //  loop until we can get the response from web service
-            //      mostly except we found now is "The remote server returned an error: (500) Internal Server Error." 
-            int wait_ms = 600000;
-            while( true )
+            // begin async call to web request.
+            IAsyncResult asyncResult = request.BeginGetResponse( null, null );
+
+            // suspend this thread until call is complete. You might want to
+            // do something usefull here like update your UI.
+            asyncResult.AsyncWaitHandle.WaitOne();
+
+            // get the response from the completed web request.
+            string soapResponse;
+            using( WebResponse webResponse = request.EndGetResponse( asyncResult ) )
             {
-                //  catch the exception from webservice
-                try
+                //  create a reader stream and read response
+                using( StreamReader streamReader = new StreamReader( webResponse.GetResponseStream() ) )
                 {
-                    // begin async call to web request.
-                    IAsyncResult asyncResult = request.BeginGetResponse( null, null );
-
-                    // suspend this thread until call is complete. You might want to
-                    // do something usefull here like update your UI.
-                    asyncResult.AsyncWaitHandle.WaitOne();
-
-                    // get the response from the completed web request.
-                    string soapResponse;
-                    using ( WebResponse webResponse = request.EndGetResponse( asyncResult ) )
-                    {
-                        //  create a reader stream and read response
-                        using ( StreamReader streamReader = new StreamReader( webResponse.GetResponseStream() ) )
-                        {
-                            //  read response
-                            soapResponse = streamReader.ReadToEnd();
-                        }
-                    }
-
-                    //  we got a response, done
-
-                    //  return response
-                    return soapResponse;
-                }
-                catch( System.Net.WebException e )
-                //  got an excpetion when call the web service, so wait
-                {
-                    //  calculate wait minutes
-                    int wait_mins = ( wait_ms / 1000 / 60 );
-                    Console.WriteLine( String.Format( "ERROR!!! Cannot get a response from webservice.\n Message = {0}\n Waiting {1} mins before call again.", e, wait_mins ) );
-
-                    //  delay a bit
-                    System.Threading.Thread.Sleep( wait_ms );
-
-                    //  increase wait secs
-                    wait_ms *= 2;
+                    //  read response
+                    soapResponse = streamReader.ReadToEnd();
                 }
             }
+
+            //  we got a response, done
+
+            //  return response
+            return soapResponse;
         }
         
         //-----------------------------------------------------------------------------------------------------------------
