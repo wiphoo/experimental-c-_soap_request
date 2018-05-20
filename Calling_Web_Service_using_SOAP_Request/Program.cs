@@ -105,7 +105,8 @@ namespace Calling_Web_Service_using_SOAP_Request
 
                         //  loop until we can get the response from web service
                         //      mostly except we found now is "The remote server returned an error: (500) Internal Server Error." 
-                        int wait_ms = 300000;
+                        int wait_mins = 90;
+                        int wait_ms = wait_mins * 60 * 1000;
                         string response = null;
                         while( true )
                         {
@@ -130,7 +131,6 @@ namespace Calling_Web_Service_using_SOAP_Request
                                 //  get current time
                                 DateTime gotWebServiceExceptionLocalDate = DateTime.Now;
                                 //  calculate wait minutes
-                                int wait_mins = ( wait_ms / 1000 / 60 );
                                 Console.WriteLine( String.Format( "ERROR!!! Cannot get a response from webservice.\n Message = {0}\n Waiting {1} mins before call again.\n Got exception from web service at {2} and it will call web service again around {3}", 
                                                                                     e, wait_mins, gotWebServiceExceptionLocalDate, gotWebServiceExceptionLocalDate.AddMinutes( wait_mins  ) ) );
 
@@ -146,7 +146,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                         parseAndStoreSOAPGetExportHarmonizeCountryResponse( hsCode, response, connectionString );
 
                         //  delay a bit
-                        System.Threading.Thread.Sleep( 1000 );
+                        System.Threading.Thread.Sleep( 10000 );
                     }
                 }
                 Console.WriteLine( "--------------------------------------------------" );
