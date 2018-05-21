@@ -22,20 +22,60 @@ using System.Data;
 
 namespace Calling_Web_Service_using_SOAP_Request
 {
+    public class FileLogger
+    {
+        //  log file stream
+        protected string logFileName = string.Empty;
+
+        //  constructor
+        public FileLogger( string logFileName )
+        {
+            //  initialize log file name
+            string executePath = Path.GetDirectoryName( System.Reflection.Assembly.GetEntryAssembly().Location );
+
+            //  construct the stream writer
+            this.logFileName = Path.Combine( executePath, logFileName );
+
+            //  log start message
+            this.log( "" );
+            this.log( "==================================================================================================================================" );
+            this.log( String.Format( "# log start at {0}", DateTime.Now ) );
+            
+        }
+
+        //  write log message to file
+        public void log( string message )
+        {
+            //  open file and append message
+            using ( StreamWriter streamWriter = File.AppendText( this.logFileName ) )
+            {
+                //  write message to stream writer
+                streamWriter.WriteLine( message );
+            }
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
             //  this program will query the data from last 2 months
 
+            //  create file logger
+            FileLogger logger = new FileLogger( Configs.logFileName );
+
             //  get the current date
             DateTime currentLocalDate = DateTime.Now;
+            logger.log( String.Format( @"# calling web service using SOAP request - run at {0}", currentLocalDate ) );
 
             //  construct the connection string to database
             string connectionString = String.Format( @"Data Source={0}; Initial Catalog={1}; User Id={2}; Password={3};",
                                                             Configs.databaseHostName, Configs.databaseName,
                                                             Configs.databaseUserName, Configs.databaseUserPassword );
+            logger.log( String.Format( @"# connect to database host name = {0}, database name = {1}", Configs.databaseHostName, Configs.databaseName ) );
+
             //  get the hamonize code
+            logger.log( @"# lising all interested hs code................................." );
             List<string> hsCodeList = new List<string>();
             {
                 //  get the hamonize code from database
@@ -73,6 +113,7 @@ namespace Calling_Web_Service_using_SOAP_Request
             }
 
             //  export hs code country
+            logger.log( @"# query export hs code from web service................................." );
             {
                 //  create the url and action
                 string urlGetExportHamonizeCountry = @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceExportHarmonizeCountry.asmx",
@@ -98,10 +139,12 @@ namespace Calling_Web_Service_using_SOAP_Request
                                 currentDate.AddMonths( 1 ) )
                 {
                     Console.WriteLine( String.Format( "getting / storing export HS data on year = {0}, month = {1}.................", currentDate.Year, currentDate.Month ) );
+                    logger.log( String.Format( "        getting / storing export HS data on year = {0}, month = {1}.................", currentDate.Year, currentDate.Month ) );
 
                     //  loop over all homonize code and call the web service
                     foreach( string hsCode in hsCodeList )
                     {
+                        logger.log( String.Format( "    current hs code = {0}", hsCode ) );
 
                         //  loop until we can get the response from web service
                         //      mostly except we found now is "The remote server returned an error: (500) Internal Server Error." 
@@ -128,6 +171,8 @@ namespace Calling_Web_Service_using_SOAP_Request
                             catch ( System.Net.WebException e )
                             //  got an excpetion when call the web service, so wait
                             {
+                                logger.log( String.Format( "         FAILED!!! query hs code = {0}, at {1}", hsCode, DateTime.Now ) );
+
                                 //  get current time
                                 DateTime gotWebServiceExceptionLocalDate = DateTime.Now;
                                 //  calculate wait minutes
@@ -135,14 +180,16 @@ namespace Calling_Web_Service_using_SOAP_Request
                                                                                     e, wait_mins, gotWebServiceExceptionLocalDate, gotWebServiceExceptionLocalDate.AddMinutes( wait_mins  ) ) );
 
                                 //  delay a bit
+                                logger.log( String.Format( "                      waiting for {0} mins, retire again at {1}", wait_mins, gotWebServiceExceptionLocalDate.AddMinutes( wait_mins ) ) );
                                 System.Threading.Thread.Sleep( wait_ms );
 
                                 //  increase wait secs
                                 wait_ms *= 3;
                             }
                         }
-                        
+
                         //  parse response
+                        logger.log( String.Format( "        arsing and storing result in database [{0}]", hsCode ) );
                         parseAndStoreSOAPGetExportHarmonizeCountryResponse( hsCode, response, connectionString );
 
                         //  delay a bit

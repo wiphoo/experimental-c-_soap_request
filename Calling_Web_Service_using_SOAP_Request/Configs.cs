@@ -9,6 +9,13 @@ namespace Calling_Web_Service_using_SOAP_Request
     class Configs
     {
         //////////////////////////////////////////////////////////////////////////////////
+        //  log file
+
+        //  log file name
+        public static string logFileName = @"calling_web_service.log";
+
+
+        //////////////////////////////////////////////////////////////////////////////////
         //  call webservice properties
 
         //  number of ranks
