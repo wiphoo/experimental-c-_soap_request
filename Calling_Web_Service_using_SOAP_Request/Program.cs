@@ -132,11 +132,12 @@ namespace Calling_Web_Service_using_SOAP_Request
                 //  calculate start/end month
                 DateTime startDate = currentLocalDate.AddMonths( -2 ),
                             endDate = currentLocalDate.AddMonths( -1 );
+                logger.log( String.Format( "# query start date = {0}, end data = {1}.................", startDate, endDate ) );
 
                 //  loop from last 2 month to last month and call webservice query then store the response data to database
-                for( DateTime currentDate = startDate ;
-                                currentDate < endDate ;
-                                currentDate.AddMonths( 1 ) )
+                for ( DateTime currentDate = startDate ;
+                                currentDate <= endDate ;
+                                currentDate = currentDate.AddMonths( 1 ) )
                 {
                     Console.WriteLine( String.Format( "getting / storing export HS data on year = {0}, month = {1}.................", currentDate.Year, currentDate.Month ) );
                     logger.log( String.Format( "        getting / storing export HS data on year = {0}, month = {1}.................", currentDate.Year, currentDate.Month ) );
@@ -189,11 +190,11 @@ namespace Calling_Web_Service_using_SOAP_Request
                         }
 
                         //  parse response
-                        logger.log( String.Format( "        arsing and storing result in database [{0}]", hsCode ) );
+                        logger.log( String.Format( "        parsing and storing result in database [{0}]", hsCode ) );
                         parseAndStoreSOAPGetExportHarmonizeCountryResponse( hsCode, response, connectionString );
 
                         //  delay a bit
-                        System.Threading.Thread.Sleep( 10000 );
+                        System.Threading.Thread.Sleep( 2500 );
                     }
                 }
                 Console.WriteLine( "--------------------------------------------------" );
@@ -212,6 +213,9 @@ namespace Calling_Web_Service_using_SOAP_Request
 
             //    Console.WriteLine( "--------------------------------------------------" );
             //}
+
+            Console.WriteLine( "== DONE ==" );
+            logger.log( "== DONE ==" );
 
             //  wait for a key press to exit
             Console.ReadLine();
