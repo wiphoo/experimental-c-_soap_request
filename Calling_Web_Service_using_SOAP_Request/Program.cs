@@ -313,7 +313,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                         getExportHarmonizeCountryResponse = body.Element( tempuriNamespace + @"GetExportHarmonizeCountryResponse"  );
 
             //  check if the response export element has any result element
-            if( getExportHarmonizeCountryResponse.Elements( tempuriNamespace + @"GetExportHarmonizeCountryResult" ).Any() )
+            if( !getExportHarmonizeCountryResponse.Elements( tempuriNamespace + @"GetExportHarmonizeCountryResult" ).Any() )
             //  the result doesn't exist, so skip
                 return;
 
