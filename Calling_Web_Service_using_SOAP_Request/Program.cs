@@ -57,25 +57,25 @@ namespace Calling_Web_Service_using_SOAP_Request
 
     class Program
     {
+        //  create file logger
+        public static FileLogger logger = new FileLogger( Configs.logFileName );
+
         static void Main(string[] args)
         {
             //  this program will query the data from last 2 months
 
-            //  create file logger
-            FileLogger logger = new FileLogger( Configs.logFileName );
-
             //  get the current date
             DateTime currentLocalDate = DateTime.Now;
-            logger.log( String.Format( @"# calling web service using SOAP request - run at {0}", currentLocalDate ) );
+            Program.logger.log( String.Format( @"# calling web service using SOAP request - run at {0}", currentLocalDate ) );
 
             //  construct the connection string to database
             string connectionString = String.Format( @"Data Source={0}; Initial Catalog={1}; User Id={2}; Password={3};",
                                                             Configs.databaseHostName, Configs.databaseName,
                                                             Configs.databaseUserName, Configs.databaseUserPassword );
-            logger.log( String.Format( @"# connect to database host name = {0}, database name = {1}", Configs.databaseHostName, Configs.databaseName ) );
+            Program.logger.log( String.Format( @"# connect to database host name = {0}, database name = {1}", Configs.databaseHostName, Configs.databaseName ) );
 
             //  get the hamonize code
-            logger.log( @"# lising all interested hs code................................." );
+            Program.logger.log( @"# lising all interested hs code................................." );
             List<string> hsCodeList = new List<string>();
             {
                 //  get the hamonize code from database
@@ -113,7 +113,7 @@ namespace Calling_Web_Service_using_SOAP_Request
             }
 
             //  export hs code country
-            logger.log( @"# query export hs code from web service................................." );
+            Program.logger.log( @"# query export hs code from web service................................." );
             {
                 //  create the url and action
                 string urlGetExportHamonizeCountry = @"http://www2.ops3.moc.go.th/tradeWebservice/ServiceExportHarmonizeCountry.asmx",
@@ -132,7 +132,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                 //  calculate start/end month
                 DateTime startDate = currentLocalDate.AddMonths( -2 ),
                             endDate = currentLocalDate.AddMonths( -1 );
-                logger.log( String.Format( "# query start date = {0}, end data = {1}.................", startDate, endDate ) );
+                Program.logger.log( String.Format( "# query start date = {0}, end data = {1}.................", startDate, endDate ) );
 
                 //  loop from last 2 month to last month and call webservice query then store the response data to database
                 for ( DateTime currentDate = startDate ;
@@ -140,12 +140,12 @@ namespace Calling_Web_Service_using_SOAP_Request
                                 currentDate = currentDate.AddMonths( 1 ) )
                 {
                     Console.WriteLine( String.Format( "getting / storing export HS data on year = {0}, month = {1}.................", currentDate.Year, currentDate.Month ) );
-                    logger.log( String.Format( "        getting / storing export HS data on year = {0}, month = {1}.................", currentDate.Year, currentDate.Month ) );
+                    Program.logger.log( String.Format( "        getting / storing export HS data on year = {0}, month = {1}.................", currentDate.Year, currentDate.Month ) );
 
                     //  loop over all homonize code and call the web service
                     foreach( string hsCode in hsCodeList )
                     {
-                        logger.log( String.Format( "    current hs code = {0}", hsCode ) );
+                        Program.logger.log( String.Format( "    current hs code = {0}", hsCode ) );
 
                         //  loop until we can get the response from web service
                         //      mostly except we found now is "The remote server returned an error: (500) Internal Server Error." 
@@ -172,7 +172,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                             catch ( System.Net.WebException e )
                             //  got an excpetion when call the web service, so wait
                             {
-                                logger.log( String.Format( "         FAILED!!! query hs code = {0}, at {1}", hsCode, DateTime.Now ) );
+                                Program.logger.log( String.Format( "         FAILED!!! query hs code = {0}, at {1}", hsCode, DateTime.Now ) );
 
                                 //  get current time
                                 DateTime gotWebServiceExceptionLocalDate = DateTime.Now;
@@ -181,7 +181,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                                                                                     e, wait_mins, gotWebServiceExceptionLocalDate, gotWebServiceExceptionLocalDate.AddMinutes( wait_mins  ) ) );
 
                                 //  delay a bit
-                                logger.log( String.Format( "                      waiting for {0} mins, retire again at {1}", wait_mins, gotWebServiceExceptionLocalDate.AddMinutes( wait_mins ) ) );
+                                Program.logger.log( String.Format( "                      waiting for {0} mins, retire again at {1}", wait_mins, gotWebServiceExceptionLocalDate.AddMinutes( wait_mins ) ) );
                                 System.Threading.Thread.Sleep( wait_ms );
 
                                 //  increase wait secs
@@ -190,7 +190,7 @@ namespace Calling_Web_Service_using_SOAP_Request
                         }
 
                         //  parse response
-                        logger.log( String.Format( "        parsing and storing result in database [{0}]", hsCode ) );
+                        Program.logger.log( String.Format( "        parsing and storing result in database [{0}]", hsCode ) );
                         parseAndStoreSOAPGetExportHarmonizeCountryResponse( hsCode, response, connectionString );
 
                         //  delay a bit
@@ -215,7 +215,7 @@ namespace Calling_Web_Service_using_SOAP_Request
             //}
 
             Console.WriteLine( "== DONE ==" );
-            logger.log( "== DONE ==" );
+            Program.logger.log( "== DONE ==" );
 
             //  wait for a key press to exit
             Console.ReadLine();
@@ -296,6 +296,8 @@ namespace Calling_Web_Service_using_SOAP_Request
 
         public static void parseAndStoreSOAPGetExportHarmonizeCountryResponse( string hsCode, string response, string connectionString )
         {
+            Program.logger.log( String.Format( @"parseAndStoreSOAPGetExportHarmonizeCountryResponse( hsCode = {0}, response = {1}, connectionString = {2}", hsCode, response, connectionString ) );
+
             //  parse reponse to XElement
             XElement xmlElementReponse = XElement.Parse( response );
             Console.WriteLine( xmlElementReponse );
@@ -315,7 +317,10 @@ namespace Calling_Web_Service_using_SOAP_Request
             //  check if the response export element has any result element
             if( !getExportHarmonizeCountryResponse.Elements( tempuriNamespace + @"GetExportHarmonizeCountryResult" ).Any() )
             //  the result doesn't exist, so skip
+            {
+                Program.logger.log( String.Format( "             SKIP!!!! empty response for this hs code = {0}", hsCode ) );
                 return;
+            }
 
             //  the result exists, so get the result element
             XElement getExportHarmonizeCountryResult = getExportHarmonizeCountryResponse.Element( tempuriNamespace + @"GetExportHarmonizeCountryResult" );
@@ -358,9 +363,26 @@ namespace Calling_Web_Service_using_SOAP_Request
                 //  loop over all results, and create or update database
                 foreach ( XElement results in getExportHarmonizeCountryResult.Elements( diffgrNamespace + @"diffgram" ) )
                 {
-                    //  get document and export element
-                    XElement document = results.Element( @"DocumentElement" ),
-                            export = document.Element( @"Export" );
+                    //  check if the document export element has any result element
+                    if ( !results.Elements( @"DocumentElement" ).Any() )
+                    //  the document element doesn't exist, so skip
+                    {
+                        Program.logger.log( String.Format( "             SKIP!!!! empty document for this hs code = {0}", hsCode ) );
+                        continue;
+                    }
+                    //  get document
+                    XElement document = results.Element( @"DocumentElement" );
+
+                    //  check if the export element has any document element
+                    if ( !document.Elements( @"Export" ).Any() )
+                    //  the export doesn't exist, so skip
+                    {
+                        Program.logger.log( String.Format( "             SKIP!!!! empty export for this hs code = {0}", hsCode ) );
+                        continue;
+                    }
+
+                    //  get export element
+                    XElement export = document.Element( @"Export" );
 
                     //  extract data
                     int year = Convert.ToInt32( export.Element( @"YearNo").Value ),
