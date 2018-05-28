@@ -332,9 +332,19 @@ namespace Calling_Web_Service_using_SOAP_Request
                 connection.Open();
 
                 //  create a sql statement string
-                string insertOrUpdateSqlStatement = String.Format( @"INSERT INTO {11}.{12}.{13} ( {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10} ) "
-                                                                    + @"VALUES( @hsCode, @year, @month, @abbrCode, @enName, @qty, @accQty, "
-                                                                               + @"@valueBaht, @accValueBaht, @valueUsd, @accValueUsd ) ",
+                string insertOrUpdateSqlStatement = String.Format( @"IF( NOT EXISTS( SELECT * FROM {11}.{12}.{13} "
+                                                                                     + @"WHERE {0} = @hsCode AND {1} = @year AND {2} = @month AND {3} = @abbrCode ) ) "
+                                                                    + @"BEGIN "
+                                                                        + @"INSERT INTO {11}.{12}.{13} ( {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10} ) "
+                                                                        + @"VALUES( @hsCode, @year, @month, @abbrCode, @enName, @qty, @accQty, "
+                                                                                       + @"@valueBaht, @accValueBaht, @valueUsd, @accValueUsd ) "
+                                                                    + @"END "
+                                                                    + @"ELSE "
+                                                                    + @"BEGIN "
+                                                                        + @"UPDATE {11}.{12}.{13} "
+                                                                        + @"SET {4} = @enName, {5} = @qty, {6} = @accQty, {7} = @valueBaht, {8} = @accValueBaht, {9} = @valueUsd, {10} = @accValueUsd "
+                                                                        + @"WHERE {0} = @hsCode AND {1} = @year AND {2} = @month AND {3} = @abbrCode "
+                                                                    + @"END ",
                                                                     //  values
                                                                     Configs.exportHsCodeColumnName, Configs.exportYearColumnName, Configs.exportMonthColumnName,
                                                                     Configs.exportAbbrColumnName, Configs.exportEnNameColumnName,
