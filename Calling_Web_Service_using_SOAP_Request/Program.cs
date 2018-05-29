@@ -369,7 +369,6 @@ namespace Calling_Web_Service_using_SOAP_Request
                 sqlCommand.Parameters.Add( "@valueUsd", SqlDbType.Decimal, 28 );
                 sqlCommand.Parameters.Add( "@accValueUsd", SqlDbType.Decimal, 28 );
 
-                Program.logger.log( String.Format( @"               number of element in result = {0}", getExportHarmonizeCountryResult.Elements( diffgrNamespace + @"diffgram" ).Count() ) );
                 //  loop over all results, and create or update database
                 foreach( XElement results in getExportHarmonizeCountryResult.Elements( diffgrNamespace + @"diffgram" ) )
                 {
@@ -392,7 +391,8 @@ namespace Calling_Web_Service_using_SOAP_Request
                     }
 
                     //  loop over all and get export element
-                    foreach( XElement export in documents.Elements( @"Export" ) )
+                    Program.logger.log( String.Format( @"               number of export elements = {0}", documents.Elements( @"Export" ).Count() ) );
+                    foreach ( XElement export in documents.Elements( @"Export" ) )
                     {
                         //  extract data
                         int year = Convert.ToInt32( export.Element( @"YearNo").Value ),
