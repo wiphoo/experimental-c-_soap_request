@@ -369,9 +369,9 @@ namespace Calling_Web_Service_using_SOAP_Request
                 sqlCommand.Parameters.Add( "@valueUsd", SqlDbType.Decimal, 28 );
                 sqlCommand.Parameters.Add( "@accValueUsd", SqlDbType.Decimal, 28 );
 
-
+                Program.logger.log( String.Format( @"               number of element in result = {0}", getExportHarmonizeCountryResult.Elements( diffgrNamespace + @"diffgram" ).Count() ) );
                 //  loop over all results, and create or update database
-                foreach ( XElement results in getExportHarmonizeCountryResult.Elements( diffgrNamespace + @"diffgram" ) )
+                foreach( XElement results in getExportHarmonizeCountryResult.Elements( diffgrNamespace + @"diffgram" ) )
                 {
                     //  check if the document export element has any result element
                     if ( !results.Elements( @"DocumentElement" ).Any() )
@@ -381,49 +381,49 @@ namespace Calling_Web_Service_using_SOAP_Request
                         continue;
                     }
                     //  get document
-                    XElement document = results.Element( @"DocumentElement" );
+                    XElement documents = results.Element( @"DocumentElement" );
 
                     //  check if the export element has any document element
-                    if ( !document.Elements( @"Export" ).Any() )
+                    if ( !documents.Elements( @"Export" ).Any() )
                     //  the export doesn't exist, so skip
                     {
                         Program.logger.log( String.Format( "             SKIP!!!! empty export for this hs code = {0}", hsCode ) );
                         continue;
                     }
 
-                    //  get export element
-                    XElement export = document.Element( @"Export" );
-
-                    //  extract data
-                    int year = Convert.ToInt32( export.Element( @"YearNo").Value ),
+                    //  loop over all and get export element
+                    foreach( XElement export in documents.Elements( @"Export" ) )
+                    {
+                        //  extract data
+                        int year = Convert.ToInt32( export.Element( @"YearNo").Value ),
                         month = Convert.ToInt32( export.Element( @"MonthNo" ).Value );
-                    string abbrCode = export.Element( @"AbbrCode" ).Value,
-                            enName = export.Element( @"EnName" ).Value;
-                    decimal qty = Convert.ToDecimal( export.Element( @"QTY" ).Value ),
-                            accQty = Convert.ToDecimal( export.Element( @"AccQTY" ).Value ),
-                            valueBaht = Convert.ToDecimal( export.Element( @"ValueBaht" ).Value ),
-                            accValueBaht = Convert.ToDecimal( export.Element( @"AccValueBaht").Value ),
-                            valueUsd = Convert.ToDecimal( export.Element( @"ValueUSD" ).Value ),
-                            accValueUsd = Convert.ToDecimal( export.Element( @"AccValueUSD").Value );
+                        string abbrCode = export.Element( @"AbbrCode" ).Value,
+                                enName = export.Element( @"EnName" ).Value;
+                        decimal qty = Convert.ToDecimal( export.Element( @"QTY" ).Value ),
+                                accQty = Convert.ToDecimal( export.Element( @"AccQTY" ).Value ),
+                                valueBaht = Convert.ToDecimal( export.Element( @"ValueBaht" ).Value ),
+                                accValueBaht = Convert.ToDecimal( export.Element( @"AccValueBaht").Value ),
+                                valueUsd = Convert.ToDecimal( export.Element( @"ValueUSD" ).Value ),
+                                accValueUsd = Convert.ToDecimal( export.Element( @"AccValueUSD").Value );
 
-                    //  create a sql command for insert or update if exists
+                        //  create a sql command for insert or update if exists
 
-                    //  update parameters
-                    sqlCommand.Parameters["@hsCode"].Value = hsCode;
-                    sqlCommand.Parameters["@year"].Value = year;
-                    sqlCommand.Parameters["@month"].Value = month;
-                    sqlCommand.Parameters["@abbrCode"].Value = abbrCode;
-                    sqlCommand.Parameters["@enName"].Value = enName;
-                    sqlCommand.Parameters["@qty"].Value = qty;
-                    sqlCommand.Parameters["@accQty"].Value = accQty;
-                    sqlCommand.Parameters["@valueBaht"].Value = valueBaht;
-                    sqlCommand.Parameters["@accValueBaht"].Value = accValueBaht;
-                    sqlCommand.Parameters["@valueUsd"].Value = valueUsd;
-                    sqlCommand.Parameters["@accValueUsd"].Value = accValueUsd;
+                        //  update parameters
+                        sqlCommand.Parameters["@hsCode"].Value = hsCode;
+                        sqlCommand.Parameters["@year"].Value = year;
+                        sqlCommand.Parameters["@month"].Value = month;
+                        sqlCommand.Parameters["@abbrCode"].Value = abbrCode;
+                        sqlCommand.Parameters["@enName"].Value = enName;
+                        sqlCommand.Parameters["@qty"].Value = qty;
+                        sqlCommand.Parameters["@accQty"].Value = accQty;
+                        sqlCommand.Parameters["@valueBaht"].Value = valueBaht;
+                        sqlCommand.Parameters["@accValueBaht"].Value = accValueBaht;
+                        sqlCommand.Parameters["@valueUsd"].Value = valueUsd;
+                        sqlCommand.Parameters["@accValueUsd"].Value = accValueUsd;
 
-                    //  execulte sql command
-                    sqlCommand.ExecuteNonQuery();
-
+                        //  execulte sql command
+                        sqlCommand.ExecuteNonQuery();
+                    }
                 }
             }
 
