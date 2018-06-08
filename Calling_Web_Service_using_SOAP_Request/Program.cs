@@ -64,6 +64,10 @@ namespace Calling_Web_Service_using_SOAP_Request
         {
             //  this program will query the data from last 2 months
 
+            //  performance testing
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
             //  get the current date
             DateTime currentLocalDate = DateTime.Now;
             Program.logger.log( String.Format( @"# calling web service using SOAP request - run at {0}", currentLocalDate ) );
@@ -195,7 +199,13 @@ namespace Calling_Web_Service_using_SOAP_Request
 
                         //  delay a bit
                         System.Threading.Thread.Sleep( 2500 );
+
+//#warning REMOVE_ME :: TESTING ONLY
+//                        break;
                     }
+
+//#warning REMOVE_ME :: TESTING ONLY
+//                    break;
                 }
                 Console.WriteLine( "--------------------------------------------------" );
             }
@@ -216,6 +226,18 @@ namespace Calling_Web_Service_using_SOAP_Request
 
             Console.WriteLine( "== DONE ==" );
             Program.logger.log( "== DONE ==" );
+
+            //  calculate total time
+            stopWatch.Stop();
+            //  get the elapsed time as a TimeSpan value.
+            TimeSpan ts = stopWatch.Elapsed;
+
+            // Format and display the TimeSpan value.
+            string elapsedTime = String.Format( "{0:00}:{1:00}:{2:00}.{3:00}",
+                                                    ts.Hours, ts.Minutes, ts.Seconds,
+                                                       ts.Milliseconds / 10 );
+            Console.WriteLine( "RunTime " + elapsedTime );
+            Program.logger.log( "RunTime " + elapsedTime );
 
             //  wait for a key press to exit
             Console.ReadLine();
